@@ -22,6 +22,9 @@ class CSVRepo():
         df = pd.DataFrame(self.data)
         df.columns = ["id", "grainArea", "grainDiameter", "aspectRatio", "majorLength", "minorLength", "GOS", "misorientation"]
         return ebsdData(df)
+    
+    def writeCSV(self):
+        self.data.to_csv("summary.csv", index=False)
 
         
 
@@ -41,6 +44,10 @@ class ebsdData():
     def calcGSArea(self) -> float:
         return np.average(self.data["grainSize"], weights=self.data["grainArea"])
 
+    # Calculate standard deviation of grain size
+    def calc_GS_sd(self) -> float:
+        return np.std(self.data["grainSize"])
+
     # Calculate standard error of grain size
     def calc_GS_sem(self) -> float:
         return stats.sem(self.data["grainSize"])
@@ -49,6 +56,9 @@ class ebsdData():
     def calcGARNum(self) -> float:
         return np.mean(self.data["aspectRatio"])
     
+    def calc_GAR_sd(self) -> float:
+        return np.std(self.data["aspectRatio"])
+    
     # average grain aspect ratio in area fraction
     def calcGARArea(self) -> float:
         return np.average(self.data["aspectRatio"], weights=self.data["grainArea"])
@@ -56,13 +66,16 @@ class ebsdData():
     # Calculate standard error of grain aspect ratio
     def calc_GAR_sem(self) -> float:
         return stats.sem(self.data["aspectRatio"])
-
-
     def calcEquiaxed(self) -> float:
         return np.sum(self.data[self.data["aspectRatio"] >= 0.5]["grainArea"]) / np.sum(self.data["grainArea"])
     
     def calcColmnar(self) -> float:
         return np.sum(self.data[self.data["aspectRatio"] < 0.5]["grainArea"]) / np.sum(self.data["grainArea"])
+
+    def calc_Summary(self):
+        df = pd.DataFrame([self.calcGSNum(), self.calcGSArea(), self.calc_GS_sd(), self.calc_GS_sem(), self.calcGARNum(), self.calcGARArea(), self.calc_GAR_sd(), self.calc_GAR_sem(), self.calcEquiaxed(), self.calcColmnar()]).T
+        df.columns = ['gsNum', 'gsArea', 'gsstd', 'gssem', 'garNum', 'garArea', 'garstd', 'garsem', 'equiaxed', 'columnar']
+        return CSVRepo(df)
 
 
 
@@ -77,5 +90,5 @@ dd = dd.calcGrainSize()
 gs = dd.calcGSNum()
 gsarea = dd.calcGSArea()
 equ = dd.calcEquiaxed()
-sem = dd.calcGSSEM()
-print(sem)
+suma = dd.calc_Summary()
+suma.writeCSV()
